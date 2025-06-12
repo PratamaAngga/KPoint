@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Admin Page with Sidebar Toggle</title>
+    <link rel="stylesheet" href="DataBarang.css">
     <style>
       :root {
         --kuning: #f1d653;
@@ -175,7 +176,7 @@
       <a href="#" data-page="transaksi" class="nav-link">Transaksi</a>
       <a href="#" data-page="data-transaksi" class="nav-link">Data Transaksi</a>
       <a href="#" data-page="data-member" class="nav-link">Data Member</a>
-      <a href="#" data-page="data-kasir" class="nav-link">Data Kasie</a>
+      <a href="#" data-page="data-kasir" class="nav-link">Data Kasir</a>
       <a href="#" data-page="data-barang" class="nav-link">Data Barang</a>
       <a href="#" data-page="data-kategori" class="nav-link">Data Kategori</a>
     </div>
@@ -320,20 +321,65 @@
         <button class="toggle-btn" onclick="toggleSidebar()">☰ Menu</button>
         <h1>Data Barang</h1>
       </header>
-      <table>
-        <thead>
-          <tr>
-            <th>Nama</th>
-            <th>Harga</th>
-            <th>Stok</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- PHP Loop barang -->
-        </tbody>
-      </table>
-    </template>
+  <main class="content">
+  <section class="card">
+    <div class="card-header">
+      <h2>Daftar Barang</h2>
+      <button class="btn-tambah" onclick="tambahBarang()">+ Tambah Barang</button> <!-- INI MODIFIKASI BARU -->
+    </div>
+    <div class="table-container">
+      <table class="data-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Barang</th>
+              <th>Harga</th>
+              <th>Stok Barang</th>
+              <th>Kategori</th>
+            </tr>
+          </thead>
+          <tbody id="barang-table-body">
+            <tr>
+              <td>1</td>
+              <td>Sabun Mandi</td>
+              <td>Rp 5.000</td>
+              <td>30</td>
+              <td>Kebersihan, Alat Mandi</td>
+            </tr>
+              <td>2</td>
+              <td>Sampo</td>
+              <td>Rp 12.000</td>
+              <td>20</td>
+              <td>Kebersihan, Alat Mandi</td>
+            </tr>
+            <td>3</td>
+            <td>Parfum</td>
+            <td>Rp 25.000</td>
+            <td>15</td>
+            <td>Kebersihan, Wangian</td>
+          </tbody>
+        </table>
+      </div>
+      <div id="popup-form" class="popup-form hidden">
+  <div class="popup-content">
+    <h3>Tambah Barang Baru</h3>
+    <label>Nama Barang:</label>
+    <input type="text" id="input-nama" required>
+    <label>Harga:</label>
+    <input type="number" id="input-harga" required>
+    <label>Stok:</label>
+    <input type="number" id="input-stok" required>
+    <label>Kategori:</label>
+    <input type="text" id="input-kategori" required>
+    <div class="popup-buttons">
+      <button onclick="simpanBarang()">Simpan</button>
+      <button onclick="tutupPopup()">Batal</button>
+    </div>
+  </div>
+</div>
+    </section>
+  </main>
+</template>
 
     <template id="data-kategori-page">
       <header>
