@@ -21,6 +21,24 @@ if (isset($_POST['simpan'])) {
         $pesan = "⚠️ Nama kategori wajib diisi!";
     }
 }
+
+// Proses hapus kategori
+if (isset($_GET['hapus'])) {
+    $id = $_GET['hapus'];
+    mysqli_query($koneksi, "DELETE FROM kategori WHERE id_kategori = '$id'");
+    $_SESSION['pesan'] = "🗑️ Kategori berhasil dihapus!";
+    header("Location: data-kategori.php");
+    exit;
+}
+
+// Ambil data kategori untuk diedit
+$kategori_edit = null;
+if (isset($_GET['edit'])) {
+    $id = $_GET['edit'];
+    $result = mysqli_query($koneksi, "SELECT * FROM kategori WHERE id_kategori = '$id'");
+    $kategori_edit = mysqli_fetch_assoc($result);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,12 +98,31 @@ if (isset($_POST['simpan'])) {
                     <!-- END POPUP -->
                 </div>
 
+                <?php if ($kategori_edit) { ?>
+                <!-- POPUP EDIT KATEGORI -->
+                <div class="popup-overlay" id="popupFormEditKategori" style="display:flex;">
+                    <div class="popup-box">
+                        <h2>Edit Kategori</h2>
+                        <form action="" method="POST">
+                            <input type="hidden" name="id_kategori" value="<?= $kategori_edit['id_kategori'] ?>">
+                            <label>Nama Kategori</label>
+                            <input type="text" name="nama_kategori" value="<?= htmlspecialchars($kategori_edit['nama_kategori']) ?>" required />
+                            <div class="popup-btns">
+                                <button type="submit" name="update" class="btn-simpan">Update</button>
+                                <a href="data-kategori.php" class="btn-batal">Batal</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <?php } ?>
+
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                         <tr>
                             <th>#</th>
                             <th>Nama Kategori</th>
+                            <th>Aksi</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -96,7 +133,11 @@ if (isset($_POST['simpan'])) {
                             echo "<tr>
                                 <td>{$no}</td>
                                 <td>" . htmlspecialchars($row['nama_kategori']) . "</td>
-                              </tr>";
+                                <td>
+                                    <a href='?edit={$row['id_kategori']}' class='btn-edit'>Edit</a>
+                                    <a href='?hapus={$row['id_kategori']}' onclick='return confirm(\"Yakin ingin menhapus data?\")' class='btn-hapus'>Hapus</a>
+                                </td>
+                                </tr>";
                             $no++;
                         }
                         ?>
