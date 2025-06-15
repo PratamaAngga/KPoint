@@ -4,7 +4,7 @@ include 'koneksi.php';
 $nama_kategori = "";
 $pesan = "";
 
-// Proses simpan kategori
+// Proses simpan kategori baru
 if (isset($_POST['simpan'])) {
     $nama_kategori = $_POST['nama_kategori'];
     if ($nama_kategori != "") {
@@ -19,6 +19,26 @@ if (isset($_POST['simpan'])) {
         }
     } else {
         $pesan = "⚠️ Nama kategori wajib diisi!";
+    }
+}
+
+// Proses update kategori - INI YANG DITAMBAHKAN
+if (isset($_POST['update'])) {
+    $id_kategori = $_POST['id_kategori'];
+    $nama_kategori = $_POST['nama_kategori'];
+    
+    if ($nama_kategori != "") {
+        $sql = "UPDATE kategori SET nama_kategori = '$nama_kategori' WHERE id_kategori = '$id_kategori'";
+        $query = mysqli_query($koneksi, $sql);
+        if ($query) {
+            $_SESSION['pesan'] = "✅ Kategori berhasil diupdate!";
+            header("Location: data-kategori.php");
+            exit;
+        } else {
+            $_SESSION['pesan'] = "❌ Gagal mengupdate kategori: " . mysqli_error($koneksi);
+        }
+    } else {
+        $_SESSION['pesan'] = "⚠️ Nama kategori wajib diisi!";
     }
 }
 
@@ -109,7 +129,7 @@ if (isset($_GET['edit'])) {
                             <input type="text" name="nama_kategori" value="<?= htmlspecialchars($kategori_edit['nama_kategori']) ?>" required />
                             <div class="popup-btns">
                                 <button type="submit" name="update" class="btn-simpan">Update</button>
-                                <a href="data-kategori.php" class="btn-batal">Batal</a>
+                                <button type="button" class="btn-batal" onclick="window.location.href='data-kategori.php'">Batal</button>
                             </div>
                         </form>
                     </div>
@@ -134,8 +154,8 @@ if (isset($_GET['edit'])) {
                                 <td>{$no}</td>
                                 <td>" . htmlspecialchars($row['nama_kategori']) . "</td>
                                 <td>
-                                    <a href='?edit={$row['id_kategori']}' class='btn-edit'>Edit</a>
-                                    <a href='?hapus={$row['id_kategori']}' onclick='return confirm(\"Yakin ingin menhapus data?\")' class='btn-hapus'>Hapus</a>
+                                    <button type='button' class='btn-edit' onclick='editKategori({$row['id_kategori']})'>Edit</button>
+                                    <button type='button' class='btn-hapus' onclick='hapusKategori({$row['id_kategori']})'>Hapus</button>
                                 </td>
                                 </tr>";
                             $no++;
@@ -156,6 +176,16 @@ if (isset($_GET['edit'])) {
 
     function tutupPopupKategori() {
         document.getElementById("popupFormKategori").style.display = "none";
+    }
+
+    function editKategori(id) {
+        window.location.href = '?edit=' + id;
+    }
+
+    function hapusKategori(id) {
+        if (confirm('Yakin ingin menghapus data?')) {
+            window.location.href = '?hapus=' + id;
+        }
     }
 </script>
 </body>

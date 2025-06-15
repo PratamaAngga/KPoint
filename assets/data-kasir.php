@@ -13,7 +13,7 @@ if (isset($_POST['simpan'])) {
     $nama = $_POST['nama'];
 
     if ($username != "" && $password != "" && $nama != "") {
-        $sql = "INSERT INTO user (username, password, nama) VALUES ('$username', '$password', '$nama')";
+        $sql = "INSERT INTO kasir (username, password, nama) VALUES ('$username', '$password', '$nama')";
         $query = mysqli_query($koneksi, $sql);
         if ($query) {
             $_SESSION['pesan'] = "✅ Kasir berhasil ditambahkan!";
@@ -30,19 +30,19 @@ if (isset($_POST['simpan'])) {
 // Proses hapus kasir
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
-    mysqli_query($koneksi, "DELETE FROM user WHERE id_user = '$id'");
+    mysqli_query($koneksi, "DELETE FROM kasir WHERE id_kasir = '$id'");
     $_SESSION['pesan'] = "🗑️ Kasir berhasil dihapus!";
     header("Location: data-kasir.php");
     exit;
 }
 
 // Ambil data kasir untuk diedit
-$kasir_edit = null;
 if (isset($_GET['edit'])) {
     $id = $_GET['edit'];
-    $result = mysqli_query($koneksi, "SELECT * FROM user WHERE id_user = '$id'");
+    $result = mysqli_query($koneksi, "SELECT * FROM kasir WHERE id_kasir = '$id'");
     $kasir_edit = mysqli_fetch_assoc($result);
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -138,7 +138,7 @@ if (isset($_GET['edit'])) {
                         </thead>
                         <tbody>
                         <?php
-                        $kasir = mysqli_query($koneksi, "SELECT * FROM user ORDER BY id_user ASC");
+                        $kasir = mysqli_query($koneksi, "SELECT * FROM kasir ORDER BY id_kasir ASC");
                         $no = 1;
                         while ($row = mysqli_fetch_assoc($kasir)) {
                             echo "<tr>
