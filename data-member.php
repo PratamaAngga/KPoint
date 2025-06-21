@@ -1,5 +1,5 @@
 <?php
-session_start();
+include 'auth.php';
 include 'koneksi.php';
 $nama_pelanggan = "";
 $no_telp = "";
@@ -108,8 +108,8 @@ if (isset($_GET['hapus_id'])) {
                 <li><a href="index.php" class="nav-link">Dashboard</a></li>
                 <li><a href="tambah-transaksi.php" class="nav-link">Tambah Transaksi</a></li>
                 <li><a href="riwayat.php" class="nav-link">Riwayat Transaksi</a></li>
-                <li><a href="data-barang.php" class="nav-link active">Data Barang</a></li>
-                <li><a href="data-member.php" class="nav-link">Data Member</a></li>
+                <li><a href="data-barang.php" class="nav-link">Data Barang</a></li>
+                <li><a href="data-member.php" class="nav-link active">Data Member</a></li>
                 <li><a href="data-kasir.php" class="nav-link">Data Kasir</a></li>
                 <li><a href="data-kategori.php" class="nav-link">Data Kategori</a></li>
             </ul>
@@ -141,6 +141,10 @@ if (isset($_GET['hapus_id'])) {
         <div class="main-content" id="main-content">
             <div class="judul">
                 <h1>Data pelanggan</h1>
+                <div class="profil">
+                    <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
+                    <img src="assets/icons/logout/logout.svg" alt="Logout" onclick="konfirmasiLogout()" style="cursor:pointer;">
+                </div>
             </div>
             <!-- Tampilkan pesan -->
             <?php
@@ -283,6 +287,13 @@ if (isset($_GET['hapus_id'])) {
                 });
             });
         });
+
+        function konfirmasiLogout() {
+            const yakin = confirm("Apakah Anda yakin ingin logout?");
+            if (yakin) {
+                window.location.href = "logout.php";
+            }
+        }
     </script>
 </body>
 </html>

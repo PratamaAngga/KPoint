@@ -1,3 +1,6 @@
+<?php
+include 'auth.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,6 +26,10 @@
         <div class="main-content" id="main-content">
             <div class="judul">
                 <h1>Dashboard</h1>
+                <div class="profil">
+                    <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
+                    <img src="assets/icons/logout/logout.svg" alt="Logout" onclick="konfirmasiLogout()" style="cursor:pointer;">
+                </div>
             </div>
             <div class="info-boxes">
                 <div class="box" style="background-color: #4f46e5">
@@ -45,6 +52,13 @@
         </div>
     </div>
 
-    <!-- <script src="assets/js/main.js"></script> -->
+    <script>
+        function konfirmasiLogout() {
+            const yakin = confirm("Apakah Anda yakin ingin logout?");
+            if (yakin) {
+                window.location.href = "logout.php";
+            }
+        }
+    </script>
 </body>
 </html>

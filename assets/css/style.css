@@ -9,6 +9,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -29,7 +30,7 @@ body {
   background: var(--hitam);
   color: var(--bg-color);
   padding: 20px;
-  height: 100vh;
+  height: 100%;
   transition: all 0.3s ease-in-out;
 }
 
@@ -75,6 +76,14 @@ body {
   justify-content: space-between;
   align-items: center;
 }
+
+.profil {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 140px;
+}
+
 .info-boxes {
   display: flex;
   flex-wrap: wrap;
@@ -322,6 +331,73 @@ body {
   border: 1px solid #076344;
   border-radius: 12px;
   margin: 10px 0;
+}
+
+.identitas {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.identitas .kotak {
+  max-width: 250px;
+}
+
+.identitas .kotak label {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.identitas .kotak input {
+  display: block;
+  color: black;
+  font-size: 1em;
+  padding: 8px 12px;
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 2px solid #aaa;
+}
+
+.garis-pemisah-transaksi {
+  width: 100%;
+  height: 2px;
+  background: #aaa;
+  border-radius: 1px;
+  margin-bottom: 20px;
+}
+
+.detail-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+.detail-table th {
+  background: #51438a;
+  color: var(--bg-color);
+}
+.detail-table th,
+.detail-table td {
+  padding: 12px;
+  border: 2px solid #aaa;
+}
+.detail-table input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #aaa;
+  border-radius: 4px;
+}
+
+.grand_total {
+  min-width: 100px;
+  max-width: 300px;
+  padding: 16px 12px;
+  border: 2px solid #aaa;
+  border-radius: 4px;
 }
 
 @keyframes fadeIn {

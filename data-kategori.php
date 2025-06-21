@@ -1,5 +1,5 @@
 <?php
-session_start();
+include 'auth.php';
 include 'koneksi.php';
 $nama_kategori = "";
 $pesan = "";
@@ -127,6 +127,10 @@ if (isset($_GET['hapus_id'])) {
         <div class="main-content" id="main-content">
             <div class="judul">
                 <h1>Data kategori</h1>
+                <div class="profil">
+                    <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
+                    <img src="assets/icons/logout/logout.svg" alt="Logout" onclick="konfirmasiLogout()" style="cursor:pointer;">
+                </div>
             </div>
             <!-- Tampilkan pesan -->
             <?php
@@ -256,6 +260,13 @@ if (isset($_GET['hapus_id'])) {
                 });
             });
         });
+
+        function konfirmasiLogout() {
+            const yakin = confirm("Apakah Anda yakin ingin logout?");
+            if (yakin) {
+                window.location.href = "logout.php";
+            }
+        }
     </script>
 </body>
 </html>
