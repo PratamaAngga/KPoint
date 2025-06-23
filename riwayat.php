@@ -3,10 +3,13 @@ include 'auth.php';
 include 'koneksi.php';
 
 // Ambil semua transaksi
-$sql = "SELECT t.*, p.nama_pelanggan, u.nama AS nama_kasir
+$sql = "SELECT t.id_transaksi, t.tanggal_transaksi, COALESCE(p.nama_pelanggan, 'Pelanggan sudah dihapus') AS nama_pelanggan, COALESCE(u.nama, 'Kasir sudah dihapus') AS nama_kasir,
+              COALESCE(SUM(dt.subtotal), 0) AS total
         FROM transaksi t
         LEFT JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan
         LEFT JOIN kasir u ON t.id_user = u.id_user
+        LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
+        GROUP BY t.id_transaksi
         ORDER BY t.tanggal_transaksi DESC";
 $query = mysqli_query($koneksi, $sql);
 
@@ -45,11 +48,14 @@ if (isset($_POST['cetak_pdf'])) {
 
     // Ambil semua transaksi di tanggal tersebut
     $transaksi_result = mysqli_query($koneksi, "
-        SELECT t.*, p.nama_pelanggan, u.nama 
-        FROM transaksi t 
+        SELECT t.id_transaksi, t.tanggal_transaksi, COALESCE(p.nama_pelanggan, 'Pelanggan sudah dihapus') AS nama_pelanggan,  COALESCE(u.nama, 'Kasir sudah dihapus') AS nama_kasir, 
+              COALESCE(SUM(dt.subtotal), 0) AS total
+        FROM transaksi t
         LEFT JOIN pelanggan p ON t.id_pelanggan = p.id_pelanggan 
         LEFT JOIN kasir u ON t.id_user = u.id_user 
+        LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
         WHERE t.tanggal_transaksi = '$tanggal_terpilih'
+        GROUP BY t.id_transaksi
         ORDER BY t.id_transaksi ASC
     ");
 
@@ -85,7 +91,7 @@ if (isset($_POST['cetak_pdf'])) {
     foreach ($transaksi_data as $tr) {
         $pdf->Cell(10,10,$no++,1);
         $pdf->Cell(70,10,$tr['nama_pelanggan'],1);
-        $pdf->Cell(60,10,$tr['nama'],1);
+        $pdf->Cell(60,10,$tr['nama_kasir'],1);
         $pdf->Cell(50,10,'Rp ' . number_format($tr['total'], 0, ',', '.'),1);
         $pdf->Ln();
     }
@@ -101,6 +107,28 @@ if (isset($_POST['cetak_pdf'])) {
   <meta charset="UTF-8">
   <title>Riwayat Transaksi</title>
   <link rel="stylesheet" href="assets/css/style.css?v=<?= time(); ?>">
+  <style>
+    /* Scroll horizontal untuk tabel */
+    .table-container,
+    .popup-box .detail-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .data-table,
+    .detail-table {
+      min-width: 600px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    /* Agar isi tabel tidak pecah atau turun */
+    .data-table td,
+    .data-table th,
+    .detail-table td,
+    .detail-table th {
+      white-space: nowrap;
+    }
+  </style>
 </head>
 <body>
 <div class="wrapper">
@@ -116,8 +144,12 @@ if (isset($_POST['cetak_pdf'])) {
       <li><a href="data-kategori.php">Data Kategori</a></li>
     </ul>
   </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+
   <div class="main-content">
     <div class="judul">
+      <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
       <h1>Riwayat Transaksi</h1>
       <div class="profil">
         <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
@@ -176,17 +208,19 @@ if (isset($_POST['cetak_pdf'])) {
 <div class="popup-overlay" id="popupDetail">
   <div class="popup-box">
     <h2>Detail Transaksi</h2>
-    <table class="detail-table">
-      <thead>
-        <tr>
-          <th>Nama Barang</th>
-          <th>Jumlah</th>
-          <th>Harga Satuan</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody id="detail-body"></tbody>
-    </table>
+    <div class="detail-table-wrapper"> <!-- Tambahkan wrapper ini -->
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>Nama Barang</th>
+            <th>Jumlah</th>
+            <th>Harga Satuan</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="detail-body"></tbody>
+      </table>
+    </div>
     <h3 style="text-align: right; margin-top: 10px;">Grand Total: <span id="grandTotal"></span></h3>
     <div class="popup-btns">
       <button class="btn-batal" onclick="tutupPopupDetail()">Tutup</button>
@@ -226,6 +260,23 @@ function konfirmasiLogout() {
     window.location.href = 'logout.php';
   }
 }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function tutupSidebar() {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+                }
+            });
+        });
 </script>
 </body>
 </html>

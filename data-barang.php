@@ -160,6 +160,8 @@ if (isset($_GET['hapus_id'])) {
                 <li><a href="data-kategori.php" class="nav-link">Data Kategori</a></li>
             </ul>
         </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
         
         <!-- POPUP Edit BARANG -->
                         <div class="popup-overlay" id="popupFormEdit">
@@ -223,6 +225,7 @@ if (isset($_GET['hapus_id'])) {
 
         <div class="main-content" id="main-content">
             <div class="judul">
+                <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
                 <h1>Data Barang</h1>
                 <div class="profil">
                     <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
@@ -427,6 +430,23 @@ if (isset($_GET['hapus_id'])) {
                 window.location.href = "logout.php";
             }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function tutupSidebar() {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+                }
+            });
+        });
     </script>
 </body>
 </html>

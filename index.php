@@ -4,33 +4,53 @@ include 'koneksi.php';
 
 // Transaksi hari ini
 $tanggal_hari_ini = date('Y-m-d');
-$query1 = mysqli_query($koneksi, "SELECT COUNT(*) AS jumlah_transaksi FROM transaksi WHERE DATE(tanggal_transaksi) = '$tanggal_hari_ini'");
+
+// ✅ Jumlah transaksi hari ini
+$query1 = mysqli_query($koneksi, "
+    SELECT COUNT(*) AS jumlah_transaksi 
+    FROM transaksi 
+    WHERE DATE(tanggal_transaksi) = '$tanggal_hari_ini'
+");
 $data1 = mysqli_fetch_assoc($query1);
-$jumlah_transaksi = $data1['jumlah_transaksi'];
+$jumlah_transaksi = (int)$data1['jumlah_transaksi'];
 
-// Pendapatan hari ini
-$query2 = mysqli_query($koneksi, "SELECT SUM(total) AS pendapatan FROM transaksi WHERE DATE(tanggal_transaksi) = '$tanggal_hari_ini'");
+// ✅ Pendapatan hari ini (hitung ulang dari detail_transaksi)
+$query2 = mysqli_query($koneksi, "
+    SELECT COALESCE(SUM(d.subtotal), 0) AS pendapatan 
+    FROM transaksi t 
+    LEFT JOIN detail_transaksi d ON t.id_transaksi = d.id_transaksi 
+    WHERE DATE(t.tanggal_transaksi) = '$tanggal_hari_ini'
+");
 $data2 = mysqli_fetch_assoc($query2);
-$pendapatan = $data2['pendapatan'] ?? 0;
+$pendapatan = (int)$data2['pendapatan'];
 
-// Jumlah barang hari ini
+// ✅ Rerata jumlah jenis barang per transaksi hari ini
 $query3 = mysqli_query($koneksi, "
     SELECT AVG(jumlah_jenis) AS rerata_jenis
     FROM (
-        SELECT COUNT(*) AS jumlah_jenis
-        FROM detail_transaksi dt
-        JOIN transaksi t ON dt.id_transaksi = t.id_transaksi
+        SELECT COUNT(DISTINCT dt.id_barang) AS jumlah_jenis
+        FROM transaksi t
+        LEFT JOIN detail_transaksi dt ON t.id_transaksi = dt.id_transaksi
         WHERE DATE(t.tanggal_transaksi) = '$tanggal_hari_ini'
-        GROUP BY dt.id_transaksi
+        GROUP BY t.id_transaksi
     ) AS sub
 ");
 $data3 = mysqli_fetch_assoc($query3);
 $rerata_barang = round($data3['rerata_jenis'] ?? 0, 1);
 
-// Transaksi terbesar
-$query4 = mysqli_query($koneksi, "SELECT MAX(total) AS transaksi_terbesar FROM transaksi WHERE DATE(tanggal_transaksi) = '$tanggal_hari_ini'");
+// ✅ Transaksi terbesar (hitung ulang dari subtotal)
+$query4 = mysqli_query($koneksi, "
+    SELECT MAX(total_hitung) AS transaksi_terbesar
+    FROM (
+        SELECT COALESCE(SUM(d.subtotal), 0) AS total_hitung
+        FROM transaksi t
+        LEFT JOIN detail_transaksi d ON t.id_transaksi = d.id_transaksi
+        WHERE DATE(t.tanggal_transaksi) = '$tanggal_hari_ini'
+        GROUP BY t.id_transaksi
+    ) AS sub
+");
 $data4 = mysqli_fetch_assoc($query4);
-$transaksi_terbesar = $data4['transaksi_terbesar'] ?? 0;
+$transaksi_terbesar = (int)$data4['transaksi_terbesar'];
 
 // laporan-transaksi.php
 
@@ -55,11 +75,19 @@ if (isset($_POST['cetak_laporan'])) {
         require('assets/fpdf/fpdf.php');
 
         $query = mysqli_query($koneksi, "
-            SELECT t.*, u.nama AS nama_kasir, m.nama_pelanggan 
+            SELECT 
+                t.id_transaksi,
+                t.tanggal_transaksi,
+                m.nama_pelanggan,
+                u.nama AS nama_kasir,
+                COALESCE(SUM(d.subtotal), 0) AS total
             FROM transaksi t
-            LEFT JOIN kasir u ON t.id_user = u.id_user
             LEFT JOIN pelanggan m ON t.id_pelanggan = m.id_pelanggan
-            $where ORDER BY tanggal_transaksi ASC
+            LEFT JOIN kasir u ON t.id_user = u.id_user
+            LEFT JOIN detail_transaksi d ON d.id_transaksi = t.id_transaksi
+            $where
+            GROUP BY t.id_transaksi
+            ORDER BY t.tanggal_transaksi ASC
         ");
 
         $transaksi_data = [];
@@ -209,11 +237,13 @@ if (isset($_POST['cetak_laporan'])) {
         require('assets/fpdf/fpdf.php');
 
         $sql = "
-            SELECT k.nama AS nama_kasir, 
-                COUNT(t.id_transaksi) AS jumlah_transaksi, 
-                SUM(t.total) AS total_pendapatan
+            SELECT 
+                k.nama AS nama_kasir,
+                COUNT(DISTINCT t.id_transaksi) AS jumlah_transaksi,
+                COALESCE(SUM(d.subtotal), 0) AS total_pendapatan
             FROM transaksi t
             JOIN kasir k ON t.id_user = k.id_user
+            LEFT JOIN detail_transaksi d ON t.id_transaksi = d.id_transaksi
             $where
             GROUP BY k.id_user
             ORDER BY total_pendapatan DESC
@@ -280,8 +310,11 @@ if (isset($_POST['cetak_laporan'])) {
             </ul>
         </div>
 
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+
         <div class="main-content" id="main-content">
             <div class="judul">
+                <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
                 <h1>Dashboard</h1>
                 <div class="profil">
                     <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
@@ -361,23 +394,36 @@ if (isset($_POST['cetak_laporan'])) {
     </div>
 
     <?php
-    // Transaksi per 7 hari terakhir
+    // Transaksi per 7 hari terakhir (jumlah transaksi)
     $transaksi_harian = [];
     $tanggal_label = [];
+
     for ($i = 6; $i >= 0; $i--) {
         $tanggal = date('Y-m-d', strtotime("-$i days"));
         $label = date('d M', strtotime($tanggal));
-        $result = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM transaksi WHERE DATE(tanggal_transaksi) = '$tanggal'");
+
+        $result = mysqli_query($koneksi, "
+            SELECT COUNT(*) AS total 
+            FROM transaksi 
+            WHERE DATE(tanggal_transaksi) = '$tanggal'
+        ");
         $data = mysqli_fetch_assoc($result);
+        
         $tanggal_label[] = $label;
-        $transaksi_harian[] = $data['total'];
+        $transaksi_harian[] = (int)$data['total'];
     }
 
-    // Pendapatan per 7 hari terakhir
+    // Pendapatan per 7 hari terakhir (hitung ulang dari detail)
     $pendapatan_harian = [];
     for ($i = 6; $i >= 0; $i--) {
         $tanggal = date('Y-m-d', strtotime("-$i days"));
-        $result = mysqli_query($koneksi, "SELECT SUM(total) AS total FROM transaksi WHERE DATE(tanggal_transaksi) = '$tanggal'");
+
+        $result = mysqli_query($koneksi, "
+            SELECT COALESCE(SUM(d.subtotal), 0) AS total 
+            FROM transaksi t
+            LEFT JOIN detail_transaksi d ON t.id_transaksi = d.id_transaksi
+            WHERE DATE(t.tanggal_transaksi) = '$tanggal'
+        ");
         $data = mysqli_fetch_assoc($result);
         $pendapatan_harian[] = (int)$data['total'];
     }
@@ -386,32 +432,32 @@ if (isset($_POST['cetak_laporan'])) {
     $kategori_nama = [];
     $kategori_jumlah = [];
     $kategori_result = mysqli_query($koneksi, "
-        SELECT k.nama_kategori, SUM(dt.jumlah) AS jumlah
+        SELECT k.nama_kategori, COALESCE(SUM(dt.jumlah), 0) AS jumlah
         FROM kategori k
         JOIN kategori_barang kb ON k.id_kategori = kb.id_kategori
         JOIN barang b ON kb.id_barang = b.id_barang
-        JOIN detail_transaksi dt ON dt.id_barang = b.id_barang
+        LEFT JOIN detail_transaksi dt ON dt.id_barang = b.id_barang
         GROUP BY k.id_kategori
     ");
     while ($row = mysqli_fetch_assoc($kategori_result)) {
         $kategori_nama[] = $row['nama_kategori'];
-        $kategori_jumlah[] = $row['jumlah'];
+        $kategori_jumlah[] = (int)$row['jumlah'];
     }
 
     // Top 5 barang terlaris
     $top_barang = [];
     $top_jumlah = [];
     $barang_result = mysqli_query($koneksi, "
-        SELECT b.nama_barang, SUM(dt.jumlah) AS total_terjual
-        FROM detail_transaksi dt
-        JOIN barang b ON dt.id_barang = b.id_barang
+        SELECT b.nama_barang, COALESCE(SUM(dt.jumlah), 0) AS total_terjual
+        FROM barang b
+        LEFT JOIN detail_transaksi dt ON dt.id_barang = b.id_barang
         GROUP BY b.id_barang
         ORDER BY total_terjual DESC
         LIMIT 5
     ");
     while ($row = mysqli_fetch_assoc($barang_result)) {
         $top_barang[] = $row['nama_barang'];
-        $top_jumlah[] = $row['total_terjual'];
+        $top_jumlah[] = (int)$row['total_terjual'];
     }
     ?>
 
@@ -575,28 +621,6 @@ if (isset($_POST['cetak_laporan'])) {
             document.getElementById("popupLaporan").style.display = "none";
         }
 
-        function ubahAction() {
-            const jenis = document.getElementById("jenis_laporan").value;
-            const form = document.getElementById("formLaporan");
-
-            switch (jenis) {
-            case "transaksi":
-                form.action = "cetak-laporan-transaksi.php";
-                break;
-            case "barang_terlaris":
-                form.action = "cetak-laporan-barang.php";
-                break;
-            case "penjualan_kategori":
-                form.action = "cetak-laporan-kategori.php";
-                break;
-            case "kasir":
-                form.action = "cetak-laporan-kasir.php";
-                break;
-            default:
-                form.action = "#";
-            }
-        }
-
         function validasiPeriode() {
             const periode = document.getElementById('periode').value;
             const tglMulai = new Date(document.getElementById('tanggal_mulai').value);
@@ -618,6 +642,23 @@ if (isset($_POST['cetak_laporan'])) {
             }
             return true;
         }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function tutupSidebar() {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+                }
+            });
+        });
     </script>
 </body>
 </html>

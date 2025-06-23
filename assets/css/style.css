@@ -30,7 +30,7 @@ body {
   background: var(--hitam);
   color: var(--bg-color);
   padding: 20px;
-  height: 100%;
+  min-height: 100vh;
   transition: all 0.3s ease-in-out;
 }
 
@@ -178,6 +178,7 @@ body {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
   font-size: 16px;
 }
 
@@ -351,15 +352,16 @@ body {
 }
 
 .identitas {
-  position: relative;
-  width: 100%;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 80px;
   margin-bottom: 22px;
 }
 
 .identitas .kotak {
-  max-width: 250px;
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 300px;
 }
 
 .identitas .kotak label {
@@ -379,6 +381,11 @@ body {
   border: 2px solid #aaa;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .garis-pemisah-transaksi {
   width: 100%;
   height: 2px;
@@ -388,7 +395,7 @@ body {
 }
 
 .detail-table {
-  width: 100%;
+  min-width: 100%;
   margin-top: 20px;
   border-collapse: collapse;
   margin-bottom: 20px;
@@ -418,22 +425,21 @@ body {
 }
 
 .laporan-cetak {
-  width: 100%;
-  margin-bottom: 32px;
   display: flex;
-  justify-content: end;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
 }
 
 .laporan-cetak label {
-  margin-right: 20px;
-  font-weight: 600;
+  font-weight: bold;
 }
 
-.laporan-cetak select {
-  padding: 8px 12px;
-  border:  2px solid #aaa;
-  border-radius: 8px;
-  margin-right: 20px;
+.laporan-cetak select,
+.laporan-cetak button {
+  padding: 6px 10px;
+  font-size: 14px;
 }
 
 .chart-container {
@@ -451,19 +457,36 @@ body {
   height: 350px;
   padding: 20px 20px 50px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .chart-title {
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 1rem;
-    color: #333;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #333;
 }
 
 .chart-box canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.active + .sidebar-overlay {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 @keyframes fadeIn {
@@ -474,5 +497,182 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.btn-menu-toggle {
+  background-color: var(--hitam);
+  border: none;
+  padding: 10px 16px;
+  color: var(--bg-color);
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .chart-box {
+    flex: 1 1 100%;
+    height: 280px;
+  }
+
+  .editBtn,
+  .showBtn,
+  .deleteBtn {
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    transform: translateX(-100%);
+    top: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--hitam);
+    z-index: 10000000;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar ul {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .main-content {
+    padding: 16px;
+    width: 100%;
+  }
+
+  .profil {
+    width: auto;
+    flex-wrap: wrap;
+  }
+
+  .info-boxes {
+    flex-direction: column;
+  }
+
+  .chart-box {
+    flex: 0 0 100%;
+    height: 320px;
+  }
+
+  .popup-box {
+    width: 95%;
+  }
+
+  .laporan-cetak {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .laporan-cetak select,
+  .laporan-cetak button {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .btn-menu-toggle {
+    display: block;
+    background: none;
+    border: none;
+    color: var(--hitam);
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+
+  .identitas {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .detail-table {
+    font-size: 14px;
+  }
+
+  .detail-table th,
+  .detail-table td {
+    padding: 8px;
+  }
+  .btn-simpan,
+  .btn-batal {
+    width: 100%;
+  }
+
+  .popup-box input,
+  .popup-box select,
+  .popup-box textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .popup-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-simpan,
+  .btn-batal {
+    width: 100%;
+  }
+
+  .profil h4 {
+    font-size: 14px;
+  }
+
+  .btn-menu-toggle {
+    display: inline-block;
+    font-size: 20px;
+    margin-right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    width: 250px;
+    background: #51438a;
+    top: 0;
+    bottom: 0;
+    z-index: 100000;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .popup-box h2 {
+    font-size: 18px;
+  }
+
+  .editBtn,
+  .showBtn,
+  .deleteBtn {
+    padding: 6px 8px;
+  }
+
+  .profil h4 {
+    display: none;
   }
 }

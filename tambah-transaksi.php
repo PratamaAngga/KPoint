@@ -45,42 +45,71 @@ if (isset($_POST['simpan'])) {
     $tanggal       = $_POST['tanggal'];
     $id_pelanggan  = intval($_POST['id_pelanggan']);
     $total         = floatval($_POST['grand_total']);
-    $id_user       = $_SESSION['id_user']; // dari session login
+    $id_user       = $_SESSION['id_user'];
 
-    // Masukkan ke tabel transaksi
-    $sql = "INSERT INTO transaksi (tanggal_transaksi, total, id_user, id_pelanggan) VALUES ('$tanggal', $total, $id_user, $id_pelanggan)";
+    $id_barang     = $_POST['id_barang'];
+    $nama_barang     = $_POST['nama_barang'];
+    $jumlah        = $_POST['jumlah'];
+    $harga_satuan  = $_POST['harga_satuan'];
+    $subtotal      = $_POST['subtotal'];
+
+    // Cek stok terlebih dahulu
+    $stok_aman = true;
+    $pesan_stok = "";
+
+    for ($i = 0; $i < count($id_barang); $i++) {
+        $id_brg = intval($id_barang[$i]);
+        $nm_brg = $nama_barang[$i];
+        $jml    = intval($jumlah[$i]);
+
+        $result = mysqli_query($koneksi, "SELECT stok_barang FROM barang WHERE id_barang = $id_brg");
+        $data = mysqli_fetch_assoc($result);
+        $stok_saat_ini = intval($data['stok_barang']);
+
+        if ($jml > $stok_saat_ini) {
+            $stok_aman = false;
+            $pesan_stok .= "❌ Stok barang $nm_brg tidak mencukupi. Tersedia: $stok_saat_ini, Diminta: $jml.<br>";
+        }
+    }
+
+    if (!$stok_aman) {
+        $_SESSION['pesanGagal'] = $pesan_stok;
+        header("Location: tambah-transaksi.php");
+        exit;
+    }
+
+    // Simpan transaksi
+    $sql = "INSERT INTO transaksi (tanggal_transaksi, total, id_user, id_pelanggan) 
+            VALUES ('$tanggal', $total, $id_user, $id_pelanggan)";
     $query = mysqli_query($koneksi, $sql);
 
     if ($query) {
         $id_transaksi = mysqli_insert_id($koneksi);
 
-        // Simpan ke detail_transaksi
-        $id_barang   = $_POST['id_barang'];
-        $jumlah      = $_POST['jumlah'];
-        $harga_satuan = $_POST['harga_satuan'];
-        $subtotal     = $_POST['subtotal'];
-
+        // Insert detail transaksi dan update stok
         for ($i = 0; $i < count($id_barang); $i++) {
             $id_brg = intval($id_barang[$i]);
             $jml    = intval($jumlah[$i]);
             $harga  = floatval($harga_satuan[$i]);
             $sub    = floatval($subtotal[$i]);
 
-            mysqli_query($koneksi, "INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, harga_satuan, subtotal) VALUES ($id_transaksi, $id_brg, $jml, $harga, $sub)");
+            // Simpan ke detail_transaksi
+            mysqli_query($koneksi, "INSERT INTO detail_transaksi (id_transaksi, id_barang, jumlah, harga_satuan, subtotal) 
+                                    VALUES ($id_transaksi, $id_brg, $jml, $harga, $sub)");
+
+            // Kurangi stok
+            mysqli_query($koneksi, "UPDATE barang SET stok_barang = stok_barang - $jml WHERE id_barang = $id_brg");
         }
 
-        // Tambah poin member
+        // Update poin member
         $poin_saat_ini = intval($_POST['poin_saat_ini']);
         $poin_setelah = $poin_saat_ini + 1;
-
-        if ($poin_setelah >= 500) {
-            $poin_setelah = 0; // Reset poin
-        }
+        if ($poin_setelah >= 500) $poin_setelah = 0;
 
         mysqli_query($koneksi, "UPDATE pelanggan SET poin = $poin_setelah WHERE id_pelanggan = $id_pelanggan");
 
-        $_SESSION['pesanSukses'] = "✅ Transaksi berhasil disimpan!";
-        header("Location: tambah-transaksi.php"); // arahkan ke halaman riwayat transaksi misalnya
+        $_SESSION['pesanSukses'] = "✅ Transaksi berhasil disimpan dan stok berhasil diperbarui!";
+        header("Location: tambah-transaksi.php");
         exit;
     } else {
         $_SESSION['pesanGagal'] = "❌ Gagal menyimpan transaksi: " . mysqli_error($koneksi);
@@ -112,8 +141,11 @@ if (isset($_POST['simpan'])) {
             </ul>
         </div>
 
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="tutupSidebar()"></div>
+
         <div class="main-content" id="main-content">
             <div class="judul">
+                <button class="btn-menu-toggle" onclick="toggleSidebar()">☰</button>
                 <h1>Buat Transaksi</h1>
                 <div class="profil">
                     <h4>Hai, <?= $_SESSION['nama']; ?> </h4>
@@ -180,10 +212,10 @@ if (isset($_POST['simpan'])) {
                                 </div>
                                 <div class="kotak">
                                     <label>Poin Saat Ini</label>
-                                    <input type="number" id="poin_saat_ini" readonly>
+                                    <input type="number" name="poin_saat_ini" id="poin_saat_ini" readonly>
         
                                     <label>Poin Setelah Transaksi</label>
-                                    <input type="number" id="poin_setelah" readonly>
+                                    <input type="number" name="poin_setelah" id="poin_setelah" readonly>
                                 </div>
                                 <div class="kotak">
                                     <label>Nama Kasir</label>
@@ -199,36 +231,38 @@ if (isset($_POST['simpan'])) {
                             <div class="garis-pemisah-transaksi"></div>
 
                             <h3>Detail Barang</h3>
-                            <table class="detail-table" id="detailTable">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Barang</th>
-                                        <th>Harga Satuan</th>
-                                        <th>Jumlah</th>
-                                        <th>Subtotal</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <input type="text" name="nama_barang[]" list="daftar_barang" oninput="pilihBarang(this)" placeholder="Ketik nama barang...">
-                                            <datalist id="daftar_barang">
-                                                <?php 
-                                                mysqli_data_seek($barang_list, 0);
-                                                while ($b = mysqli_fetch_assoc($barang_list)) : ?>
-                                                    <option value="<?= htmlspecialchars($b['nama_barang']) ?>" data-id="<?= $b['id_barang'] ?>" data-harga="<?= $b['harga'] ?>"></option>
-                                                <?php endwhile; ?>
-                                            </datalist>
-                                            <input type="hidden" name="id_barang[]">
-                                        </td>
-                                        <td><input type="number" name="harga_satuan[]" readonly></td>
-                                        <td><input type="number" name="jumlah[]" oninput="updateSubtotal(this)"></td>
-                                        <td><input type="number" name="subtotal[]" readonly></td>
-                                        <td><button type="button" class="deleteBtn" onclick="hapusBaris(this)"><img src="assets/icons/trash/Trash.svg" alt=""></button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-scroll">
+                                <table class="detail-table" id="detailTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Barang</th>
+                                            <th>Harga Satuan</th>
+                                            <th>Jumlah</th>
+                                            <th>Subtotal</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <input type="text" name="nama_barang[]" list="daftar_barang" oninput="pilihBarang(this)" placeholder="Ketik nama barang...">
+                                                <datalist id="daftar_barang">
+                                                    <?php 
+                                                    mysqli_data_seek($barang_list, 0);
+                                                    while ($b = mysqli_fetch_assoc($barang_list)) : ?>
+                                                        <option value="<?= htmlspecialchars($b['nama_barang']) ?>" data-id="<?= $b['id_barang'] ?>" data-harga="<?= $b['harga'] ?>"></option>
+                                                    <?php endwhile; ?>
+                                                </datalist>
+                                                <input type="hidden" name="id_barang[]">
+                                            </td>
+                                            <td><input type="number" name="harga_satuan[]" readonly></td>
+                                            <td><input type="number" name="jumlah[]" oninput="updateSubtotal(this)"></td>
+                                            <td><input type="number" name="subtotal[]" readonly></td>
+                                            <td><button type="button" class="deleteBtn" onclick="hapusBaris(this)"><img src="assets/icons/trash/Trash.svg" alt=""></button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
                             <button type="button" class="btn-tambah" onclick="tambahBaris()">+ Tambah Barang</button>
 
@@ -370,6 +404,23 @@ if (isset($_POST['simpan'])) {
                 tbody.rows[0].querySelectorAll("input").forEach(input => input.value = "");
             }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function tutupSidebar() {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+                }
+            });
+        });
     </script>
 </body>
 </html>
