@@ -75,24 +75,22 @@ if (isset($_POST['cetak_pdf'])) {
 
     $pdf->SetFont('Arial','B',11);
     $pdf->Cell(10,10,'#',1);
-    $pdf->Cell(50,10,'Nama Member',1);
-    $pdf->Cell(50,10,'Kasir',1);
-    $pdf->Cell(40,10,'Total',1);
-    $pdf->Cell(40,10,'Waktu',1);
+    $pdf->Cell(70,10,'Nama Member',1);
+    $pdf->Cell(60,10,'Kasir',1);
+    $pdf->Cell(50,10,'Total',1);
     $pdf->Ln();
 
     $no = 1;
     $pdf->SetFont('Arial','',11);
     foreach ($transaksi_data as $tr) {
         $pdf->Cell(10,10,$no++,1);
-        $pdf->Cell(50,10,$tr['nama_pelanggan'],1);
-        $pdf->Cell(50,10,$tr['nama'],1);
-        $pdf->Cell(40,10,'Rp ' . number_format($tr['total'], 0, ',', '.'),1);
-        $pdf->Cell(40,10,date('H:i', strtotime($tr['tanggal_transaksi'])),1);
+        $pdf->Cell(70,10,$tr['nama_pelanggan'],1);
+        $pdf->Cell(60,10,$tr['nama'],1);
+        $pdf->Cell(50,10,'Rp ' . number_format($tr['total'], 0, ',', '.'),1);
         $pdf->Ln();
     }
 
-    $filename = "laporan_transaksi_" . $tanggal_terpilih . ".pdf";
+    $filename = "laporan_transaksi_" . date('d M Y', strtotime($tanggal_terpilih)) . ".pdf";
     $pdf->Output('D', $filename);
     exit;
 }
@@ -108,6 +106,7 @@ if (isset($_POST['cetak_pdf'])) {
 <div class="wrapper">
   <div class="sidebar">
     <ul>
+      <li><a href="index.php" class="logo">K<span>.</span>Point</a></li>
       <li><a href="index.php">Dashboard</a></li>
       <li><a href="tambah-transaksi.php">Tambah Transaksi</a></li>
       <li><a href="riwayat.php" class="nav-link active">Riwayat Transaksi</a></li>
@@ -139,7 +138,7 @@ if (isset($_POST['cetak_pdf'])) {
                         <option value="<?= $tgl['tanggal_transaksi'] ?>"><?= date('d M Y', strtotime($tgl['tanggal_transaksi'])) ?></option>
                     <?php endwhile; ?>
                 </select>
-                <button type="submit" name="cetak_pdf">Cetak PDF</button>
+                <button type="submit" class="btn-tambah" name="cetak_pdf">Cetak</button>
             </form>
         </div>
         <div class="table-container">
@@ -158,11 +157,11 @@ if (isset($_POST['cetak_pdf'])) {
               <?php $no = 1; while ($row = mysqli_fetch_assoc($query)) : ?>
               <tr>
                 <td><?= $no++; ?></td>
-                <td><?= $row['tanggal_transaksi']; ?></td>
+                <td><?= date('Y-m-d', strtotime($row['tanggal_transaksi'])) ?></td>
                 <td><?= htmlspecialchars($row['nama_pelanggan']); ?></td>
                 <td><?= htmlspecialchars($row['nama_kasir']); ?></td>
                 <td><?= number_format($row['total'], 0, ',', '.'); ?></td>
-                <td><button onclick="tampilkanDetail(<?= $row['id_transaksi']; ?>)">Detail</button></td>
+                <td><button class="showBtn" onclick="tampilkanDetail(<?= $row['id_transaksi']; ?>)"><img src="assets/icons/view/View.svg" alt=""></button></td>
               </tr>
               <?php endwhile; ?>
             </tbody>
@@ -177,7 +176,7 @@ if (isset($_POST['cetak_pdf'])) {
 <div class="popup-overlay" id="popupDetail">
   <div class="popup-box">
     <h2>Detail Transaksi</h2>
-    <table class="data-table">
+    <table class="detail-table">
       <thead>
         <tr>
           <th>Nama Barang</th>

@@ -150,6 +150,7 @@ if (isset($_GET['hapus_id'])) {
     <div class="wrapper">
         <div class="sidebar">
             <ul>
+                <li><a href="index.php" class="logo">K<span>.</span>Point</a></li>
                 <li><a href="index.php" class="nav-link">Dashboard</a></li>
                 <li><a href="tambah-transaksi.php" class="nav-link">Tambah Transaksi</a></li>
                 <li><a href="riwayat.php" class="nav-link">Riwayat Transaksi</a></li>
