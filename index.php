@@ -5,7 +5,7 @@ include 'koneksi.php';
 // Transaksi hari ini
 $tanggal_hari_ini = date('Y-m-d');
 
-// ✅ Jumlah transaksi hari ini
+// Jumlah transaksi hari ini
 $query1 = mysqli_query($koneksi, "
     SELECT COUNT(*) AS jumlah_transaksi 
     FROM transaksi 
@@ -14,7 +14,7 @@ $query1 = mysqli_query($koneksi, "
 $data1 = mysqli_fetch_assoc($query1);
 $jumlah_transaksi = (int)$data1['jumlah_transaksi'];
 
-// ✅ Pendapatan hari ini (hitung ulang dari detail_transaksi)
+// Pendapatan hari ini (hitung ulang dari detail_transaksi)
 $query2 = mysqli_query($koneksi, "
     SELECT COALESCE(SUM(d.subtotal), 0) AS pendapatan 
     FROM transaksi t 
@@ -24,7 +24,7 @@ $query2 = mysqli_query($koneksi, "
 $data2 = mysqli_fetch_assoc($query2);
 $pendapatan = (int)$data2['pendapatan'];
 
-// ✅ Rerata jumlah jenis barang per transaksi hari ini
+// Rerata jumlah jenis barang per transaksi hari ini
 $query3 = mysqli_query($koneksi, "
     SELECT AVG(jumlah_jenis) AS rerata_jenis
     FROM (
@@ -38,7 +38,7 @@ $query3 = mysqli_query($koneksi, "
 $data3 = mysqli_fetch_assoc($query3);
 $rerata_barang = round($data3['rerata_jenis'] ?? 0, 1);
 
-// ✅ Transaksi terbesar (hitung ulang dari subtotal)
+// Transaksi terbesar (hitung ulang dari subtotal)
 $query4 = mysqli_query($koneksi, "
     SELECT MAX(total_hitung) AS transaksi_terbesar
     FROM (
@@ -51,6 +51,20 @@ $query4 = mysqli_query($koneksi, "
 ");
 $data4 = mysqli_fetch_assoc($query4);
 $transaksi_terbesar = (int)$data4['transaksi_terbesar'];
+
+// Transaksi terkecil (hitung ulang dari subtotal)
+$query5 = mysqli_query($koneksi, "
+    SELECT MIN(total_hitung) AS transaksi_terkecil
+    FROM (
+        SELECT COALESCE(SUM(d.subtotal), 0) AS total_hitung
+        FROM transaksi t
+        LEFT JOIN detail_transaksi d ON t.id_transaksi = d.id_transaksi
+        WHERE DATE(t.tanggal_transaksi) = '$tanggal_hari_ini'
+        GROUP BY t.id_transaksi
+    ) AS sub
+");
+$data5 = mysqli_fetch_assoc($query5);
+$transaksi_terkecil = (int)$data5['transaksi_terkecil'];
 
 // laporan-transaksi.php
 
@@ -337,6 +351,10 @@ if (isset($_POST['cetak_laporan'])) {
                 <div class="box" style="background-color: #ef4444">
                     <h3>Transaksi Terbesar Hari Ini</h3>
                     <p>Rp. <span><?= number_format($transaksi_terbesar, 0, ',', '.') ?></span></p>
+                </div>
+                <div class="box" style="background-color: #f59e0b">
+                    <h3>Transaksi Terkecil Hari Ini</h3>
+                    <p>Rp. <span><?= number_format($transaksi_terkecil, 0, ',', '.') ?></span></p>
                 </div>
             </div>
             <div class="chart-container">
